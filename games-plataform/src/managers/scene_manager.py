@@ -20,18 +20,16 @@ class SceneManager:
         self.scenes = {}
         self.current_scene = None
         
-        self.background = assets.get_image('loading_screen_bg')
+        # Carrega o background de loading
+        self.loading_background = assets.get_image('loading_screen_bg')
+        if self.loading_background: 
+            self.loading_background = self.loading_background.convert()
         
-        # Controle de transição
-        self.transitioning = False
-        self.transition_alpha = 0
-        self.transition_speed = TRANSITION_SPEED
-        self.next_scene_type = None
-        
-        # Superfície para efeito de fade
-        screen_size = screen.get_size()
-        self.fade_surface = pygame.Surface(screen_size)
-        self.fade_surface.fill((0, 0, 0))
+        # Controle de transição com loading
+        self.is_loading = False  # Está mostrando a tela de loading?
+        self.loading_timer = 0
+        self.loading_duration = 1.0  # 2 segundos
+        self.next_scene_type = None  # Qual cena carregar após o loading
         
         self._setup_scenes()
     
@@ -43,69 +41,63 @@ class SceneManager:
             # Adicione mais cenas aqui conforme necessário
         }
         
-        # Define cena inicial
+        # Define cena inicial (SEM loading)
         self.current_scene = self.scenes[SceneType.MAIN_MENU]
         self.current_scene.on_enter()
+        print(f"✓ Cena inicial: {SceneType.MAIN_MENU.value}")
     
     def change_scene(self, scene_type):
         """
-        Muda para uma nova cena SEM TRANSIÇÃO (para teste)
+        Inicia transição para uma nova cena (com tela de loading)
+        
+        Args:
+            scene_type: Tipo da cena de destino
         """
-        if scene_type in self.scenes and not self.transitioning:
-            print(f"🔄 Mudança DIRETA para: {scene_type.value} (sem transição)")
+        if scene_type in self.scenes and not self.is_loading:
+            print(f"🔄 Iniciando transição para: {scene_type.value}")
             
             # Sai da cena atual
             self.current_scene.on_exit()
             
-            # Muda diretamente para a nova cena
-            self.current_scene = self.scenes[scene_type]
-            self.current_scene.on_enter()
+            # Ativa o modo loading
+            self.is_loading = True
+            self.loading_timer = 0
+            self.next_scene_type = scene_type
     
     def update(self, dt):
         """
-        Atualiza cena atual SEM verificar transições
+        Atualiza o estado do jogo
+        
+        Args:
+            dt: Delta time em SEGUNDOS
         """
-        # Verifica se a cena atual quer mudar
-        if self.current_scene.next_scene:
-            self.change_scene(self.current_scene.next_scene)
-            self.current_scene.next_scene = None
-        
-        # Atualiza a cena atual
-        self.current_scene.update(dt)
-    
-    def _update_transition(self):
-        """Atualiza o estado da transição (fade in/out)"""
-        # Fase 1: Fade out (escurece a tela)
-        if self.transition_alpha < 255:
-            self.transition_alpha += self.transition_speed
+        if self.is_loading:
+            # Está na tela de loading
+            self.loading_timer += dt
             
-            if self.transition_alpha >= 255:
-                self.transition_alpha = 255
-                # Momento de trocar a cena (no meio da transição)
-                if self.next_scene_type:
-                    self._switch_scene()
-        
-        # Fase 2: Fade in (clareia a tela)
+            # Verifica se passaram 2 segundos
+            if self.loading_timer >= self.loading_duration:
+                self._finish_loading()
         else:
-            self.transition_alpha -= self.transition_speed
+            # Verifica se a cena atual quer mudar
+            if self.current_scene.next_scene:
+                self.change_scene(self.current_scene.next_scene)
+                self.current_scene.next_scene = None
             
-            if self.transition_alpha <= 0:
-                self.transition_alpha = 0
-                self.transitioning = False
-                print("✓ Transição concluída")
+            # Atualiza a cena atual
+            self.current_scene.update(dt)
     
-    def _switch_scene(self):
-        """Executa a troca de cena"""
-        # Sai da cena atual
-        self.current_scene.on_exit()
+    def _finish_loading(self):
+        """Finaliza o loading e muda para a nova cena"""
+        print(f"✓ Loading concluído! Entrando em: {self.next_scene_type.value}")
         
         # Muda para a nova cena
         self.current_scene = self.scenes[self.next_scene_type]
-        
-        print(f"✓ Mudando para cena: {self.next_scene_type.value}")
-        
         self.current_scene.on_enter()
         
+        # Desativa o modo loading
+        self.is_loading = False
+        self.loading_timer = 0
         self.next_scene_type = None
     
     def handle_events(self, events):
@@ -115,15 +107,32 @@ class SceneManager:
         Args:
             events: Lista de eventos do pygame
         """
-        # Não processa eventos durante transição
-        if not self.transitioning:
+        # Não processa eventos durante loading
+        if not self.is_loading:
             self.current_scene.handle_events(events)
     
     def draw(self):
-        """Desenha apenas a cena atual - SEM EFEITOS DE TRANSIÇÃO"""
-        self.current_scene.draw()
+        """Desenha a tela atual (cena ou loading)"""
+        if self.is_loading:
+            # Desenha a tela de loading
+            self._draw_loading_screen()
+        else:
+            # Desenha a cena atual
+            self.current_scene.draw()
+    
+    def _draw_loading_screen(self):
+        """Desenha a tela de loading com o background"""
+        screen_size = self.screen.get_size()
         
-        # DEBUG: Mostra que não há transição
-        font = pygame.font.Font(None, 36)
-        text = font.render("SEM TRANSIÇÃO - TESTE", True, (0, 255, 0))
-        self.screen.blit(text, (10, 10))
+        # Preenche com preto (fallback)
+        self.screen.fill((0, 0, 0))
+        
+        # Desenha o background de loading se disponível
+        if self.loading_background:
+            try:
+                scaled_bg = pygame.transform.scale(self.loading_background, screen_size)
+                self.screen.blit(scaled_bg, (0, 0))
+            except Exception as e:
+                print(f"❌ Erro ao desenhar loading background: {e}")
+                self.screen.fill((120, 80, 200))  # Fallback roxo
+        
