@@ -106,7 +106,7 @@ class GameSelectionScene(Scene):
         )
         
         # Botão de voltar (canto superior esquerdo)
-        back_arrow_size = 80
+        back_arrow_size = 150
         back_arrow_scaled = pygame.transform.scale(
             self.back_arrow,
             (back_arrow_size, back_arrow_size)
@@ -116,6 +116,25 @@ class GameSelectionScene(Scene):
             80,
             80,
             'back'
+        )
+        self.current_game_button()
+    
+    def current_game_button(self):
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+        center_x = screen_width // 2
+        center_y = screen_height // 2
+
+        current_game_selected_size = 400
+        current_game_selected_scaled = pygame.transform.scale(
+            self.current_game_selected,
+            (current_game_selected_size, current_game_selected_size)
+        )
+        self.buttons['selected_game'] = Button(
+            current_game_selected_scaled,
+            center_x,
+            center_y,
+            'selected_game'
         )
     
     def handle_events(self, events):
@@ -136,11 +155,13 @@ class GameSelectionScene(Scene):
         if self.buttons['arrow_left'].is_clicked(mouse_pos):
             print("➡️ Navegar para jogo anterior")
             self.previous_game()
+            self.current_game_button()
             # Futuramente: self.previous_game()
         
         elif self.buttons['arrow_right'].is_clicked(mouse_pos):
             print("➡️ Navegar para próximo jogo")
             self.next_game()
+            self.current_game_button()
             # Futuramente: self.next_game()
         
         elif self.buttons['back'].is_clicked(mouse_pos):
@@ -148,10 +169,15 @@ class GameSelectionScene(Scene):
             self.next_scene = SceneType.MAIN_MENU
         
         # Clique no ícone do jogo para iniciar
-        elif self.current_game_selected and self.current_game_selected.collidepoint(mouse_pos):
+        elif self.buttons['selected_game'].is_clicked(mouse_pos):
             print("🎮 Iniciando jogo!")
+            current_game_scene = self.getCurrentGameScene()
+            self.next_scene = SceneType.self.current_game_selected
             # Futuramente: self.next_scene = SceneType.GAME
     
+    def getCurrentGameScene():
+        #adicionar logica de como pegar a proxima cena baseada no jogo atual
+
     def next_game(self):
         if self.current_game_selected in self.game_icon_scaled:
             current_index = self.game_icon_scaled.index(self.current_game_selected)
@@ -184,12 +210,6 @@ class GameSelectionScene(Scene):
             except Exception as e:
                 print(f"❌ Erro no background: {e}")
                 self.screen.fill((120, 80, 200))  # Fallback
-        
-        # Resto dos elementos...
-        if self.current_game_selected and self.current_game_rect_selected:
-            self.screen.blit(self.current_game_selected, self.current_game_rect_selected)
-        else:
-            self.screen.blit(self.game_icon_scaled[0], self.game_icon_rect[0])
         
         for button in self.buttons.values():
             button.draw(self.screen)
