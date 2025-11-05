@@ -14,10 +14,18 @@ class GameSelectionScene(Scene):
         
         # Carrega assets
         self.background = assets.get_image('selection_menu_bg')
-        self.game_icon = assets.get_image('poker_icon')
+        self.poker_game_icon = assets.get_image('poker_icon')
+        self.paciencia_game_icon = assets.get_image('paciencia_icon')
+        self.jogo_da_velha_game_icon = assets.get_image('jogo_da_velha_icon')
+        self.blackjack_game_icon = assets.get_image('blackjack_icon')
+        
+        self.game_icons = [self.poker_game_icon, self.paciencia_game_icon, self.jogo_da_velha_game_icon, self. blackjack_game_icon]
+        
         self.arrow_left = assets.get_image('arrow_left')
         self.arrow_right = assets.get_image('arrow_right')
         self.back_arrow = assets.get_image('back_arrow')
+        
+        self.current_game_selected = None
         
         # Debug: Verifica se background foi carregado e testa cor
         if self.background:
@@ -53,13 +61,19 @@ class GameSelectionScene(Scene):
         
         # Ícone do jogo no centro (15% da largura da tela)
         icon_size = int(screen_width * 0.15)
-        self.game_icon_scaled = pygame.transform.scale(
-            self.game_icon, 
-            (icon_size, icon_size)
-        )
-        self.game_icon_rect = self.game_icon_scaled.get_rect(
-            center=(center_x, center_y - 50)
-        )
+        self.game_icon_scaled = []
+        self.game_icon_rect = []
+        # Percorre todos icones transformandos em scale e seus devidos botões
+        print(self.game_icons)
+        for game_icon in self.game_icons:
+            scaled_icon = pygame.transform.scale(game_icon, (icon_size, icon_size))
+            self.game_icon_scaled.append(scaled_icon)
+            
+            rect = scaled_icon.get_rect(center=(center_x, center_y - 50))
+            self.game_icon_rect.append(rect)
+        # Inicia pelo primeiro jogo do array
+        self.current_game_selected = self.game_icon_scaled[0] 
+        self.current_game_rect_selected = self.game_icon_rect[0] 
         
         # Tamanho das setas (8% da largura da tela)
         arrow_size = int(screen_width * 0.08)
@@ -120,11 +134,13 @@ class GameSelectionScene(Scene):
     def _handle_button_clicks(self, mouse_pos):
         """Processa cliques nos botões"""
         if self.buttons['arrow_left'].is_clicked(mouse_pos):
-            print("⬅️ Navegar para jogo anterior")
+            print("➡️ Navegar para jogo anterior")
+            self.previous_game()
             # Futuramente: self.previous_game()
         
         elif self.buttons['arrow_right'].is_clicked(mouse_pos):
             print("➡️ Navegar para próximo jogo")
+            self.next_game()
             # Futuramente: self.next_game()
         
         elif self.buttons['back'].is_clicked(mouse_pos):
@@ -132,16 +148,33 @@ class GameSelectionScene(Scene):
             self.next_scene = SceneType.MAIN_MENU
         
         # Clique no ícone do jogo para iniciar
-        elif self.game_icon_rect and self.game_icon_rect.collidepoint(mouse_pos):
+        elif self.current_game_selected and self.current_game_selected.collidepoint(mouse_pos):
             print("🎮 Iniciando jogo!")
             # Futuramente: self.next_scene = SceneType.GAME
     
+    def next_game(self):
+        if self.current_game_selected in self.game_icon_scaled:
+            current_index = self.game_icon_scaled.index(self.current_game_selected)
+            next_index = (current_index + 1) % len(self.game_icon_scaled)
+            
+            self.current_game_selected = self.game_icon_scaled[next_index]
+            self.current_game_rect_selected = self.game_icon_rect[next_index]
+        
+    def previous_game(self):
+        if self.current_game_selected in self.game_icon_scaled:
+            current_index = self.game_icon_scaled.index(self.current_game_selected)
+
+            prev_index = (current_index - 1) % len(self.game_icon_scaled)
+
+            self.current_game_selected = self.game_icon_scaled[prev_index]
+            self.current_game_rect_selected = self.game_icon_rect[prev_index]
+
+            
     def draw(self):
         """Desenha a tela de seleção - VERSÃO FINAL CORRETA"""
         screen_size = self.screen.get_size()
         
-        # ⚠️ CRÍTICO: Sempre limpe a tela no início!
-        self.screen.fill((0, 0, 0))  # Limpa completamente
+        self.screen.fill((0, 0, 0))
         
         # Background
         if self.background:
@@ -153,8 +186,10 @@ class GameSelectionScene(Scene):
                 self.screen.fill((120, 80, 200))  # Fallback
         
         # Resto dos elementos...
-        if self.game_icon_scaled and self.game_icon_rect:
-            self.screen.blit(self.game_icon_scaled, self.game_icon_rect)
+        if self.current_game_selected and self.current_game_rect_selected:
+            self.screen.blit(self.current_game_selected, self.current_game_rect_selected)
+        else:
+            self.screen.blit(self.game_icon_scaled[0], self.game_icon_rect[0])
         
         for button in self.buttons.values():
             button.draw(self.screen)

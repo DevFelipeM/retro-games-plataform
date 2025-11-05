@@ -26,9 +26,9 @@ class SceneManager:
             self.loading_background = self.loading_background.convert()
         
         # Controle de transição com loading
-        self.is_loading = False  # Está mostrando a tela de loading?
+        self.is_loading = False  
         self.loading_timer = 0
-        self.loading_duration = 1.0  # 2 segundos
+        self.loading_duration = 1.0 
         self.next_scene_type = None  # Qual cena carregar após o loading
         
         self._setup_scenes()
@@ -79,7 +79,6 @@ class SceneManager:
             if self.loading_timer >= self.loading_duration:
                 self._finish_loading()
         else:
-            # Verifica se a cena atual quer mudar
             if self.current_scene.next_scene:
                 self.change_scene(self.current_scene.next_scene)
                 self.current_scene.next_scene = None
