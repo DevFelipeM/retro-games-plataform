@@ -5,6 +5,10 @@ import pygame
 from src.utils.constants import SceneType, TRANSITION_SPEED
 from src.scenes.main_menu_scene import MainMenuScene
 from src.scenes.game_selection_scene import GameSelectionScene
+from src.scenes.games.poker_game_scene import PokerGameScene
+from src.scenes.games.paciencia_game_scene import PacienciaGameScene
+from src.scenes.games.jogo_da_velha_game_scene import JogoDaVelhaGameScene
+from src.scenes.games.blackjack_game_scene import BlackjackGameScene
 
 class SceneManager:
     """Gerencia cenas e transições entre elas"""
@@ -38,7 +42,10 @@ class SceneManager:
         self.scenes = {
             SceneType.MAIN_MENU: MainMenuScene(self.screen, self.assets),
             SceneType.GAME_SELECTION: GameSelectionScene(self.screen, self.assets),
-            # Adicione mais cenas aqui conforme necessário
+            SceneType.POKER_GAME: PokerGameScene(self.screen, self.assets),
+            SceneType.PACIENCIA_GAME: PacienciaGameScene(self.screen, self.assets),
+            SceneType.JOGO_DA_VELHA_GAME: JogoDaVelhaGameScene(self.screen, self.assets),
+            SceneType.BLACKJACK_GAME: BlackjackGameScene(self.screen, self.assets),
         }
         
         # Define cena inicial (SEM loading)
